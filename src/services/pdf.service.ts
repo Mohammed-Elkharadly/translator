@@ -1,11 +1,7 @@
 import * as pdfjs from "pdfjs-dist";
-import type {
-  PdfDocument,
-  PdfPage,
-  PdfParagraph,
-} from "../types";
+import type { PdfDocument, PdfPage, PdfParagraph } from "../types";
 
-// Now textItems is TextItem[] and has str, transform, width, height   
+// Now textItems is TextItem[] and has str, transform, width, height
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -26,7 +22,6 @@ interface TextLine {
   items: PositionedTextItem[];
   text: string;
 }
-
 
 function isPositionedTextItem(value: unknown): value is PositionedTextItem {
   if (typeof value !== "object" || value === null) return false;
@@ -81,7 +76,11 @@ function buildLines(items: PositionedTextItem[]): TextLine[] {
       if (previous) {
         const gap = xOf(item) - (xOf(previous) + previous.width);
         const threshold = Math.max(previous.height, item.height, 1) * 0.18;
-        if (gap > threshold && !text.endsWith(" ") && !item.str.startsWith(" ")) {
+        if (
+          gap > threshold &&
+          !text.endsWith(" ") &&
+          !item.str.startsWith(" ")
+        ) {
           text += " ";
         }
       }
@@ -93,9 +92,7 @@ function buildLines(items: PositionedTextItem[]): TextLine[] {
     line.text = text.replace(/\s+/g, " ").trim();
   }
 
-  return lines
-    .filter((line) => line.text.length > 0)
-    .sort((a, b) => b.y - a.y);
+  return lines.filter((line) => line.text.length > 0).sort((a, b) => b.y - a.y);
 }
 
 function buildParagraphs(
@@ -136,7 +133,10 @@ function buildParagraphs(
 }
 
 export async function extractPdf(file: File): Promise<PdfDocument> {
-  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+  if (
+    file.type !== "application/pdf" &&
+    !file.name.toLowerCase().endsWith(".pdf")
+  ) {
     throw new Error("Please select a PDF file.");
   }
   if (file.size === 0) throw new Error("The selected PDF is empty.");
@@ -149,11 +149,10 @@ export async function extractPdf(file: File): Promise<PdfDocument> {
     const pages: PdfPage[] = [];
 
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-      
       const page = await pdf.getPage(pageNumber);
       const viewport = page.getViewport({ scale: 1 });
       const content = await page.getTextContent();
-      const items = content.items.filter(isPositionedTextItem);
+      const items = content.items.filter(isPositionedTextItem) as PositionedTextItem[];
       const lines = buildLines(items);
 
       pages.push({

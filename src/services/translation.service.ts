@@ -1,10 +1,18 @@
 import { pipeline } from "@huggingface/transformers";
 import type { ModelProgress } from "../types";
 
-const MODEL_ID = "Xenova/opus-mt-en-ar";
+const MODEL_ID = "Xenova/nllb-200-distilled-600M";
 
 type TranslationOutput = { translation_text: string };
-type Translator = (text: string) => Promise<TranslationOutput[]>;
+interface TranslationOptions {
+  src_lang?: string;
+  tgt_lang?: string;
+}
+
+type Translator = (
+  text: string,
+  options?: TranslationOptions,
+) => Promise<TranslationOutput[]>;
 
 let translator: Translator | null = null;
 let loadingPromise: Promise<Translator> | null = null;
@@ -61,7 +69,12 @@ export function translateText(text: string): Promise<string> {
     await loadTranslationModel();
     if (!translator) throw new Error("Translation model is not available.");
 
-    const result = await translator(input);
+    // NLLB requires language parameters
+    const result = await translator(input, {
+      src_lang: "eng_Latn",  // English
+      tgt_lang: "arb_Arab",  // Arabic (Standard)
+    });
+
     const translated = result[0]?.translation_text?.trim();
 
     if (!translated) throw new Error("The model returned an empty translation.");
